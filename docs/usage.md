@@ -5,21 +5,21 @@ Requires Python 3.11+ (stdlib only — nothing to `pip install`) and bash.
 ## No clone, no install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mikegorelikoff/ad-sdlc-metrics/main/scripts/remote-run.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mikegorelikoff/ai-sdlc-metrics/main/scripts/remote-run.sh | bash
 ```
 
 Downloads the scripts into a temp directory, runs the full pipeline, prints where the
 CSVs landed, and tells you how to delete the temp dir afterward. Pass flags after `--`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mikegorelikoff/ad-sdlc-metrics/main/scripts/remote-run.sh | bash -s -- --tool codex --from 2026-07-01
+curl -fsSL https://raw.githubusercontent.com/mikegorelikoff/ai-sdlc-metrics/main/scripts/remote-run.sh | bash -s -- --tool codex --from 2026-07-01
 ```
 
 ## From a local clone
 
 ```bash
-git clone https://github.com/mikegorelikoff/ad-sdlc-metrics.git
-cd ad-sdlc-metrics
+git clone https://github.com/mikegorelikoff/ai-sdlc-metrics.git
+cd ai-sdlc-metrics
 ./scripts/run.sh
 ```
 

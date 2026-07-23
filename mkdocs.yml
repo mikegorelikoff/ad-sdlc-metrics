@@ -1,8 +1,8 @@
 site_name: ai-sdlc-metrics
 site_description: Personal AI-tool adoption metrics for Codex CLI and Claude Code
-site_url: https://mikegorelikoff.github.io/ad-sdlc-metrics/
-repo_url: https://github.com/mikegorelikoff/ad-sdlc-metrics
-repo_name: mikegorelikoff/ad-sdlc-metrics
+site_url: https://mikegorelikoff.github.io/ai-sdlc-metrics/
+repo_url: https://github.com/mikegorelikoff/ai-sdlc-metrics
+repo_name: mikegorelikoff/ai-sdlc-metrics
 edit_uri: edit/main/docs/
 copyright: Copyright 2026 Mike Gorelikov, licensed under Apache License 2.0
 

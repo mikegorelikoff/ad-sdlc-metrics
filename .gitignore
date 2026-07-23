@@ -1,5 +1,6 @@
 data/
-scripts/__pycache__/
+__pycache__/
 .claude/
 _bmad/
 site/
+.pytest_cache/
