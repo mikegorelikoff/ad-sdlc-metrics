@@ -1,9 +1,10 @@
-site_name: metrics
+site_name: ai-sdlc-metrics
 site_description: Personal AI-tool adoption metrics for Codex CLI and Claude Code
 site_url: https://mikegorelikoff.github.io/ad-sdlc-metrics/
 repo_url: https://github.com/mikegorelikoff/ad-sdlc-metrics
 repo_name: mikegorelikoff/ad-sdlc-metrics
 edit_uri: edit/main/docs/
+copyright: Copyright 2026 Mike Gorelikov, licensed under Apache License 2.0
 
 theme:
   name: material
@@ -22,9 +23,15 @@ theme:
         name: Switch to light mode
   features:
     - navigation.instant
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
     - navigation.sections
+    - search.suggest
+    - search.highlight
     - content.code.copy
-    - toc.integrate
+    - content.tooltips
+    - toc.follow
 
 markdown_extensions:
   - tables

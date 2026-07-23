@@ -1,4 +1,4 @@
-# metrics
+# ai-sdlc-metrics
 
 Personal AI-tool adoption metrics for Codex CLI and Claude Code, built entirely from
 data already on your machine — read-only, nothing uploaded anywhere, nothing invented.
