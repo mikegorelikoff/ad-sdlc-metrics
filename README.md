@@ -1,24 +1,44 @@
 # metrics
 
 Personal AI-tool adoption metrics for Codex CLI and Claude Code, built entirely from
-data already on your machine (`~/.codex`, `~/.claude`) — read-only, nothing is uploaded
-anywhere.
+data already on your machine — read-only, nothing uploaded anywhere, nothing invented.
 
-## Run it — no clone, no install
+## Why this exists
+
+Using two AI coding tools day to day and wanting an honest answer to "am I actually
+adopting these, or just occasionally poking at them" turns out to be harder than
+checking either tool's built-in dashboard. Investigation into the raw data under
+`~/.codex` and `~/.claude` found the two tools don't retain history on the same
+timeline, that a large share of what looks like "sessions" is actually autonomous
+subagent work rather than a human typing, and that neither tool's dashboard can answer
+the two-tool comparison question at all. This project exists to fix that: normalize
+both tools' logs into one comparable shape, separate real human usage from background
+agent work, and roll it up into a metric grounded in an existing industry framework
+(the DX AI Measurement Framework) rather than an invented number.
+
+The full reasoning — including the specific data-quality findings that drove every
+design decision — is in `docs/index.md` and `docs/methodology.md`. This README is the
+quick version.
+
+## Quick start
+
+Requires Python 3.11+ (standard library only — nothing to install) and bash.
+
+No clone needed:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/mikegorelikoff/ad-sdlc-metrics/main/scripts/remote-run.sh | bash
 ```
 
-That's it. It downloads the scripts into a temp dir, runs the full pipeline, prints
-where the CSVs landed, and tells you how to delete the temp dir when you're done.
-Pass flags after `--`, e.g. only Codex, last 30 days:
+This downloads the scripts into a temp directory, runs the full pipeline, prints where
+the CSVs landed, and tells you how to delete the temp dir afterward. Pass flags after
+`--` (see Flags below):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/mikegorelikoff/ad-sdlc-metrics/main/scripts/remote-run.sh | bash -s -- --tool codex --from 2026-07-01
 ```
 
-## Run it from a local clone
+Or from a local clone:
 
 ```bash
 git clone https://github.com/mikegorelikoff/ad-sdlc-metrics.git
@@ -34,46 +54,51 @@ cd ad-sdlc-metrics
 | Script | What it does |
 |---|---|
 | `scripts/run.sh` | Runs the three scripts below in order. This is what you actually want to run. |
-| `scripts/inventory.py` | Read-only report: what data sources exist, their date range, record counts. No files written. |
-| `scripts/pipeline.py` | Normalizes Codex + Claude Code sessions into `data/codex/` and `data/claude/` CSVs (`sessions.csv`, `daily_activity.csv`). |
+| `scripts/inventory.py` | Read-only report: what data sources exist, their date range, record counts. Writes nothing. |
+| `scripts/pipeline.py` | Normalizes Codex + Claude Code sessions into `data/codex/` and `data/claude/` CSVs (`sessions.csv`, `daily_activity.csv`), classifying every session as human-initiated or subagent-spawned. |
 | `scripts/adoption_report.py` | Rolls `daily_activity.csv` up into `adoption_weekly.csv` / `adoption_monthly.csv` per tool — active-day rate, volume, and each tool's share of total sessions. |
 
-Requires Python 3.11+ (stdlib only, no dependencies to install) and bash.
+Everything runs locally against your own machine's data. Nothing is written back to
+either tool, and nothing leaves your machine.
 
 ## Flags
 
 `run.sh` (and `inventory.py`/`pipeline.py` directly) accept:
 
-- `--tool {codex,claude}` — only process one tool
-- `--from YYYY-MM-DD` / `--to YYYY-MM-DD` — inclusive date window
-- `--repo <substring>` — only include sessions whose project path contains this substring (skips the Claude `stats-cache.json` gap-fill, which has no per-project attribution)
+| Flag | Meaning |
+|---|---|
+| `--tool {codex,claude}` | Only process one tool |
+| `--from YYYY-MM-DD` / `--to YYYY-MM-DD` | Inclusive date window |
+| `--repo <substring>` | Only sessions whose project path contains this substring. Skips the Claude `stats-cache.json` gap-fill, which has no per-project attribution. |
 
 ```bash
 ./scripts/run.sh --tool codex --repo my-project --from 2026-07-01 --to 2026-07-31
 ```
 
-## Notes
+`CODEX_HOME`/`CLAUDE_HOME` env vars override the default `~/.codex`/`~/.claude` paths.
 
-- `CODEX_HOME`/`CLAUDE_HOME` env vars override the default `~/.codex`/`~/.claude` paths.
-- Subagent-spawned sessions (background/parallel agent work) are tracked separately
-  (`session_kind` column in `sessions.csv`) and excluded from `daily_activity.csv` by
-  default, so adoption numbers reflect direct human usage.
-- Design history and known limitations: `_bmad-output/implementation-artifacts/`
-  (specs) and `deferred-work.md` in the same directory.
+## Documentation
 
-## Docs
-
-`docs/` has the full write-up: why this exists, the methodology it's scoped against,
-the data model, and known limitations. View it with:
+`docs/` is a full mkdocs-material site covering the motivation, the methodology (mapped
+against the DX AI Measurement Framework's five pillars, and why four of them are
+intentionally out of scope here), the exact CSV schema, and known limitations. View it
+locally:
 
 ```bash
 pip install mkdocs-material
 mkdocs serve
 ```
 
+Design history — every decision this pipeline made and why, including what review
+caught and fixed along the way — lives in `_bmad-output/implementation-artifacts/`.
+Known gaps and open questions are tracked in `deferred-work.md` in that same directory.
+
 ## Community
 
 - Contributing: `CONTRIBUTING.md`
 - Code of conduct: `CODE_OF_CONDUCT.md`
 - Reporting a security issue: `SECURITY.md`
-- License: `LICENSE` (Apache License 2.0)
+
+## License
+
+Apache License 2.0 — see `LICENSE`.
