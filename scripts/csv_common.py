@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+import hashlib
 import os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -49,6 +50,19 @@ def epoch_bounds(date_from: Optional[str], date_to: Optional[str]) -> tuple:
     if date_to:
         to_epoch = int(datetime.strptime(date_to, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp()) + 86399
     return (from_epoch, to_epoch)
+
+
+def redact_path(path: str) -> str:
+    """One-way, stable redaction of a project_path value.
+
+    Same input always produces the same output (so grouping/filtering by "same
+    project" downstream still works on redacted data), but the original path --
+    which can embed usernames or client/project names -- can't be recovered from
+    the output. Empty input stays empty rather than hashing to a misleading value.
+    """
+    if not path:
+        return path
+    return "proj-" + hashlib.sha256(path.encode("utf-8")).hexdigest()[:12]
 
 
 def atomic_write_csv(path: Path, fieldnames: Iterable[str], rows: Iterable[dict]) -> None:

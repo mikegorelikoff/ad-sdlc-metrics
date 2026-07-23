@@ -43,9 +43,12 @@ tool-vs-tool comparisons within the same tool are solid. These are the places wh
 
 ## Privacy
 
-- **`project_path` isn't redacted.** Raw absolute paths can embed usernames or
-  client/project names. Not a concern for local personal use, which is the only use case
-  today — worth revisiting before any export/sharing feature.
+`project_path` (a raw absolute path, which can embed usernames or client/project names)
+is included by default, since it's needed for `--repo` filtering and this data never
+leaves your machine by default. `pipeline.py --redact-paths` replaces it in
+`sessions.csv` with a stable one-way hash instead (`--repo` filtering still runs against
+the real path first, so filtering and redaction compose correctly) — use it before
+exporting or sharing the CSVs anywhere.
 
 ## Out of scope by design
 

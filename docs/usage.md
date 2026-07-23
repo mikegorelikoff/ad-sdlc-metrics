@@ -45,9 +45,11 @@ python3 scripts/adoption_report.py  # writes adoption_weekly.csv / adoption_mont
 | `--tool {codex,claude}` | Only process one tool |
 | `--from YYYY-MM-DD` / `--to YYYY-MM-DD` | Inclusive date window |
 | `--repo <substring>` | Only sessions whose project path contains this substring. Skips the Claude `stats-cache.json` gap-fill, which has no per-project attribution to filter by. |
+| `--redact-paths` | `pipeline.py` only (accepted as a no-op by `inventory.py` for `run.sh`'s flag forwarding). Replaces `project_path` in `sessions.csv` with a stable one-way hash — same path always hashes the same, so grouping by project still works, but the real path can't be recovered. Use before exporting or sharing the CSVs. |
 
 ```bash
 ./scripts/run.sh --tool codex --repo my-project --from 2026-07-01 --to 2026-07-31
+./scripts/run.sh --redact-paths
 ```
 
 `CODEX_HOME`/`CLAUDE_HOME` env vars override the default `~/.codex`/`~/.claude` paths.

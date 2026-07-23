@@ -70,9 +70,11 @@ either tool, and nothing leaves your machine.
 | `--tool {codex,claude}` | Only process one tool |
 | `--from YYYY-MM-DD` / `--to YYYY-MM-DD` | Inclusive date window |
 | `--repo <substring>` | Only sessions whose project path contains this substring. Skips the Claude `stats-cache.json` gap-fill, which has no per-project attribution. |
+| `--redact-paths` | `pipeline.py` only. Replaces `project_path` in `sessions.csv` with a stable one-way hash — use before exporting or sharing the CSVs anywhere. |
 
 ```bash
 ./scripts/run.sh --tool codex --repo my-project --from 2026-07-01 --to 2026-07-31
+./scripts/run.sh --redact-paths   # before sharing the output CSVs with anyone
 ```
 
 `CODEX_HOME`/`CLAUDE_HOME` env vars override the default `~/.codex`/`~/.claude` paths.

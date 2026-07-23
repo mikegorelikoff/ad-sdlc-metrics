@@ -106,6 +106,38 @@ def test_pipeline_warns_on_suspicious_row_count_drop(codex_home, claude_home, tm
     assert "row count dropped from 10 to 1" in captured.err
 
 
+def test_pipeline_redact_paths_hides_real_path(codex_home, claude_home, tmp_path, monkeypatch):
+    insert_thread(codex_home / "state_5.sqlite", id="t1", created_at=1751328000, cwd="/Users/secret/client-project")
+    data_dir = tmp_path / "data"
+    run_pipeline(monkeypatch, tmp_path, data_dir, args=["--tool", "codex", "--redact-paths"])
+
+    sessions_csv = (data_dir / "codex" / "sessions.csv").read_text()
+    assert "client-project" not in sessions_csv
+    assert "proj-" in sessions_csv
+
+
+def test_pipeline_without_redact_paths_keeps_real_path(codex_home, claude_home, tmp_path, monkeypatch):
+    insert_thread(codex_home / "state_5.sqlite", id="t1", created_at=1751328000, cwd="/Users/secret/client-project")
+    data_dir = tmp_path / "data"
+    run_pipeline(monkeypatch, tmp_path, data_dir, args=["--tool", "codex"])
+
+    sessions_csv = (data_dir / "codex" / "sessions.csv").read_text()
+    assert "client-project" in sessions_csv
+
+
+def test_pipeline_redact_paths_combined_with_repo_filter(codex_home, claude_home, tmp_path, monkeypatch):
+    insert_thread(codex_home / "state_5.sqlite", id="a", created_at=1751328000, cwd="/Users/x/my-project")
+    insert_thread(codex_home / "state_5.sqlite", id="b", created_at=1751328000, cwd="/Users/x/other")
+    data_dir = tmp_path / "data"
+    run_pipeline(monkeypatch, tmp_path, data_dir,
+                 args=["--tool", "codex", "--repo", "my-project", "--redact-paths"])
+
+    lines = (data_dir / "codex" / "sessions.csv").read_text().splitlines()
+    session_ids = [line.split(",")[1] for line in lines[1:]]
+    assert session_ids == ["a"]  # --repo filtering still worked
+    assert "my-project" not in "\n".join(lines)  # but the surviving row's path is redacted
+
+
 def test_pipeline_no_warning_when_scoped_by_flags(codex_home, claude_home, tmp_path, monkeypatch, capsys):
     for i in range(10):
         insert_thread(codex_home / "state_5.sqlite", id=f"t{i}", created_at=1751328000 + i)

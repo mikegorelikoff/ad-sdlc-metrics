@@ -27,7 +27,7 @@ One row per session (human-initiated *and* subagent-spawned — nothing is dropp
 | `source` | `codex` or `claude` |
 | `session_id` | Thread id (Codex) or transcript filename (Claude) |
 | `date` | Session start date, `YYYY-MM-DD` |
-| `project_path` | Working directory the session ran in |
+| `project_path` | Working directory the session ran in. Replaced with a stable one-way hash if `pipeline.py` ran with `--redact-paths` — see Limitations & open questions |
 | `model` | Model used, if known |
 | `message_count` | Conversational turns (see caveat below) |
 | `tool_call_count` | Tool/function calls made |

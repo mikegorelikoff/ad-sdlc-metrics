@@ -306,6 +306,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repo", dest="repo", default=None,
                          help="only count sessions whose cwd contains this substring "
                               "(project-scoped sources only; history.jsonl/stats-cache.json unaffected)")
+    parser.add_argument("--redact-paths", dest="redact_paths", action="store_true",
+                         help="accepted for compatibility with run.sh's flag forwarding to "
+                              "pipeline.py -- inventory.py never prints project paths, so this "
+                              "is a no-op here")
     args = parser.parse_args()
     if args.date_from and args.date_to and args.date_from > args.date_to:
         parser.error(f"--from {args.date_from} is after --to {args.date_to}")

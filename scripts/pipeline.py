@@ -30,6 +30,11 @@ def parse_args() -> argparse.Namespace:
                          help="inclusive upper date bound (YYYY-MM-DD)")
     parser.add_argument("--repo", dest="repo", default=None,
                          help="only include sessions whose project_path contains this substring")
+    parser.add_argument("--redact-paths", dest="redact_paths", action="store_true",
+                         help="replace project_path in sessions.csv with a stable one-way hash "
+                              "(same path always hashes the same, so grouping by project still "
+                              "works, but the real path can't be recovered) -- for if this data "
+                              "is ever exported or shared beyond local personal use")
     args = parser.parse_args()
     if args.date_from and args.date_to and args.date_from > args.date_to:
         parser.error(f"--from {args.date_from} is after --to {args.date_to}")
@@ -102,6 +107,11 @@ def main() -> None:
         # --from/--to/--repo scope is expected to shrink the row count.
         if args.date_from is None and args.date_to is None and args.repo is None:
             _warn_if_suspicious_drop(tool, len(tool_sessions), tool_dir / "sessions.csv")
+        if args.redact_paths:
+            # --repo filtering (inside extract_codex/extract_claude) already ran
+            # against the real project_path -- only the output is redacted here.
+            tool_sessions = [{**s, "project_path": csv_common.redact_path(s["project_path"])}
+                              for s in tool_sessions]
         csv_common.atomic_write_csv(tool_dir / "sessions.csv", csv_common.SESSION_FIELDS, tool_sessions)
         csv_common.atomic_write_csv(tool_dir / "daily_activity.csv", csv_common.DAILY_FIELDS, tool_daily)
         print(f"{tool}/sessions.csv: {len(tool_sessions)} rows")

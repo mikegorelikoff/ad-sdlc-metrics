@@ -77,6 +77,13 @@ def test_scan_claude_stats_cache_dedupes_dates(claude_home, monkeypatch, capsys)
     assert "count:  2" in out
 
 
+def test_redact_paths_flag_accepted_as_noop(codex_home, claude_home, monkeypatch):
+    # run.sh forwards --redact-paths to both scripts; inventory.py must accept
+    # it without error even though it never prints paths.
+    exit_code = run_inventory(monkeypatch, args=["--redact-paths"])
+    assert exit_code == 0
+
+
 def test_codex_home_env_var_override(tmp_path, monkeypatch, capsys):
     # inventory.py reads the env var at import time -- verify the fallback logic
     # directly rather than re-importing the module mid-test-suite.

@@ -82,3 +82,19 @@ def test_aggregate_daily_all_unknown_field_stays_blank():
 
 def test_aggregate_daily_empty_input_returns_empty_list():
     assert csv_common.aggregate_daily([]) == []
+
+
+def test_redact_path_is_stable():
+    assert csv_common.redact_path("/Users/x/proj") == csv_common.redact_path("/Users/x/proj")
+
+
+def test_redact_path_differs_for_different_inputs():
+    assert csv_common.redact_path("/Users/x/proj-a") != csv_common.redact_path("/Users/x/proj-b")
+
+
+def test_redact_path_does_not_contain_original():
+    assert "x/proj" not in csv_common.redact_path("/Users/x/proj")
+
+
+def test_redact_path_empty_stays_empty():
+    assert csv_common.redact_path("") == ""
