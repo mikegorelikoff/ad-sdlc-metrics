@@ -1,0 +1,4 @@
+data/
+scripts/__pycache__/
+.claude/
+_bmad/
