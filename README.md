@@ -70,3 +70,10 @@ the data model, and known limitations. View it with:
 pip install mkdocs-material
 mkdocs serve
 ```
+
+## Community
+
+- Contributing: `CONTRIBUTING.md`
+- Code of conduct: `CODE_OF_CONDUCT.md`
+- Reporting a security issue: `SECURITY.md`
+- License: `LICENSE` (Apache License 2.0)
