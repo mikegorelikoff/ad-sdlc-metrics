@@ -1,9 +1,20 @@
-name: Deploy docs
+name: docs-pages
 
 on:
+  pull_request:
+    paths:
+      - "README.md"
+      - "CONTRIBUTING.md"
+      - "SECURITY.md"
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/docs-deploy.yml"
   push:
     branches: [main]
     paths:
+      - "README.md"
+      - "CONTRIBUTING.md"
+      - "SECURITY.md"
       - "docs/**"
       - "mkdocs.yml"
       - ".github/workflows/docs-deploy.yml"
@@ -11,59 +22,50 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  enable-pages:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Ensure GitHub Pages is enabled (source = GitHub Actions)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if gh api "repos/${{ github.repository }}/pages" >/dev/null 2>&1; then
-            echo "Pages already enabled."
-          else
-            echo "Enabling Pages with build_type=workflow..."
-            if gh api --method POST "repos/${{ github.repository }}/pages" -f build_type=workflow; then
-              echo "Pages enabled."
-            else
-              echo "::warning::Could not enable Pages automatically (the default GITHUB_TOKEN may lack permission)."
-              echo "::warning::Enable it manually once: Settings > Pages > Source > GitHub Actions."
-            fi
-          fi
-
   build:
-    needs: enable-pages
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Configure Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install mkdocs-material
         run: pip install mkdocs-material
 
-      - name: Build site
+      - name: Build documentation
         run: mkdocs build --strict
 
-      - uses: actions/upload-pages-artifact@v3
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
   deploy:
+    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - id: deployment
+      - name: Deploy Pages
+        id: deployment
         uses: actions/deploy-pages@v4
