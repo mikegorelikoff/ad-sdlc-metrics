@@ -26,6 +26,7 @@ ROLLUP_FIELDS = (
     "active_days",
     "days_in_period",
     "active_day_rate",
+    "is_partial",
     "session_count",
     "message_count",
     "tool_call_count",
@@ -89,7 +90,8 @@ def _days_in_month(period_start: date) -> int:
     return calendar.monthrange(period_start.year, period_start.month)[1]
 
 
-def _rollup(rows: list, period_of, days_in_period_of) -> list:
+def _rollup(rows: list, period_of, days_in_period_of, today: Optional[date] = None) -> list:
+    today = today or date.today()
     buckets: dict = {}
     for r in rows:
         key = (r["source"], period_of(r["date"]))
@@ -108,6 +110,8 @@ def _rollup(rows: list, period_of, days_in_period_of) -> list:
         session_count = sum(g["session_count"] for g in group)
         total_session_count = period_totals[period_start]
         share = round((session_count / total_session_count) * 100, 1) if total_session_count else 0.0
+        period_end = period_start + timedelta(days=days_in_period - 1)
+        is_partial = 1 if period_end >= today else 0
         result.append(
             {
                 "source": source,
@@ -115,6 +119,7 @@ def _rollup(rows: list, period_of, days_in_period_of) -> list:
                 "active_days": active_days,
                 "days_in_period": days_in_period,
                 "active_day_rate": round(active_days / days_in_period, 2),
+                "is_partial": is_partial,
                 "session_count": session_count,
                 "message_count": csv_common.sum_optional(g["message_count"] for g in group),
                 "tool_call_count": csv_common.sum_optional(g["tool_call_count"] for g in group),
@@ -139,6 +144,12 @@ def main() -> None:
         daily_path = DATA_DIR / tool / "daily_activity.csv"
         _require_csv(daily_path)
         rows.extend(_load_daily_activity(daily_path, seen))
+
+    if not rows:
+        print("warning: no rows found across all data/<tool>/daily_activity.csv files -- "
+              "this may mean pipeline.py hasn't found any sessions yet, or it may mean "
+              "something upstream broke silently. Writing empty rollup files.",
+              file=sys.stderr)
 
     # session_share_pct is computed across both tools' combined volume even
     # though each tool's rollup is written to its own file below.

@@ -61,11 +61,24 @@ def _parse_transcript(fpath: Path) -> Optional[dict]:
                 if record.get("type") in ("user", "assistant"):
                     message = record.get("message")
                     if isinstance(message, dict):
-                        message_count += 1
+                        content = message.get("content")
+                        # Claude Code represents a tool's result as a synthetic
+                        # "user" record whose content is only tool_result blocks --
+                        # not something a human authored. Codex's rollout format
+                        # keeps tool output as its own "function_call_output" type,
+                        # never a "message", so excluding these here keeps the two
+                        # tools' message_count columns comparable.
+                        is_tool_result_echo = (
+                            message.get("role") == "user"
+                            and isinstance(content, list)
+                            and bool(content)
+                            and all(isinstance(b, dict) and b.get("type") == "tool_result" for b in content)
+                        )
+                        if not is_tool_result_echo:
+                            message_count += 1
                         m = message.get("model")
                         if not model and isinstance(m, str):
                             model = m
-                        content = message.get("content")
                         if isinstance(content, list):
                             for block in content:
                                 if isinstance(block, dict) and block.get("type") == "tool_use":
@@ -90,8 +103,10 @@ def _parse_transcript(fpath: Path) -> Optional[dict]:
     # positives from an unrelated dir named e.g. "my-subagents-tool" and from
     # some unrelated deeper ancestor happening to be named "subagents".
     is_subagent = fpath.parent.name.lower() == "subagents"
-    # Subagent transcripts live at <parent_uuid>/subagents/agent-*.jsonl -- the
-    # grandparent directory name is the parent (human) session's own uuid.
+    # The directory immediately above "subagents" is this transcript's direct
+    # parent's own id -- correct at any nesting depth, since a nested
+    # subagent-of-subagent would sit at <parent_agent_id>/subagents/agent-*.jsonl,
+    # not necessarily under the top-level human session directly.
     parent_session_id = fpath.parent.parent.name if is_subagent else None
     return {
         "source": "claude",

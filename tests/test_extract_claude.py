@@ -46,6 +46,57 @@ def test_get_sessions_classifies_subagent_transcript(claude_home):
     assert sessions[0]["parent_session_id"] == "parent-uuid"
 
 
+def test_get_sessions_nested_subagent_links_to_immediate_parent(claude_home):
+    # A subagent (agent-A) that itself spawns a nested subagent (agent-B) --
+    # agent-B's parent should be agent-A, not the top-level human session.
+    f = (claude_home / "projects" / "-Users-x-proj" / "human-uuid"
+         / "subagents" / "agent-A" / "subagents" / "agent-B.jsonl")
+    write_transcript(f, [
+        {"type": "user", "timestamp": "2026-07-01T10:00:00.000Z",
+         "message": {"role": "user", "content": [{"type": "text", "text": "hi"}]}},
+    ])
+
+    sessions = extract_claude.get_sessions()
+    assert sessions[0]["session_kind"] == "subagent"
+    assert sessions[0]["parent_session_id"] == "agent-A"
+
+
+def test_get_sessions_excludes_tool_result_echoes_from_message_count(claude_home):
+    f = claude_home / "projects" / "-Users-x-proj" / "abc.jsonl"
+    write_transcript(f, [
+        {"type": "user", "timestamp": "2026-07-01T10:00:00.000Z",
+         "message": {"role": "user", "content": [{"type": "text", "text": "real question"}]}},
+        {"type": "assistant", "timestamp": "2026-07-01T10:01:00.000Z",
+         "message": {"role": "assistant", "content": [{"type": "tool_use", "name": "x"}]}},
+        # Synthetic tool-result echo -- content is only a tool_result block, not
+        # something the human typed. Must not count as a message.
+        {"type": "user", "timestamp": "2026-07-01T10:02:00.000Z",
+         "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "1", "content": "ok"}]}},
+        {"type": "assistant", "timestamp": "2026-07-01T10:03:00.000Z",
+         "message": {"role": "assistant", "content": [{"type": "text", "text": "done"}]}},
+    ])
+
+    sessions = extract_claude.get_sessions()
+    # 1 real user message + 2 assistant messages = 3; the tool_result echo excluded
+    assert sessions[0]["message_count"] == 3
+    assert sessions[0]["tool_call_count"] == 1
+
+
+def test_get_sessions_mixed_content_user_turn_still_counts(claude_home):
+    # A user turn with a tool_result block PLUS actual text content is not a pure
+    # echo -- something the human added alongside it -- so it should still count.
+    f = claude_home / "projects" / "-Users-x-proj" / "abc.jsonl"
+    write_transcript(f, [
+        {"type": "user", "timestamp": "2026-07-01T10:00:00.000Z",
+         "message": {"role": "user", "content": [
+             {"type": "tool_result", "tool_use_id": "1", "content": "ok"},
+             {"type": "text", "text": "also, one more thing"},
+         ]}},
+    ])
+    sessions = extract_claude.get_sessions()
+    assert sessions[0]["message_count"] == 1
+
+
 def test_get_sessions_ignores_dir_named_similarly_to_subagents(claude_home):
     # "my-subagents-tool" is a path segment but not exactly "subagents" -- must
     # not false-positive as a subagent transcript.

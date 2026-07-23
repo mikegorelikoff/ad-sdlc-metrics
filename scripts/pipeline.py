@@ -36,6 +36,24 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
+def _warn_if_suspicious_drop(tool: str, new_count: int, sessions_csv: Path) -> None:
+    """Warn if a full, unfiltered run returns far fewer sessions than last time.
+
+    A >50% drop most likely means a transient failure (a locked sqlite file, a
+    briefly-unmounted directory) rather than a real drop in usage -- but this
+    still overwrites the CSVs rather than blocking, since a human should decide
+    whether to investigate, not have a script silently keep stale data forever.
+    """
+    if not sessions_csv.exists():
+        return
+    with sessions_csv.open(encoding="utf-8") as f:
+        old_count = sum(1 for _ in f) - 1  # minus header
+    if old_count > 0 and new_count < old_count * 0.5:
+        print(f"warning: {tool}/sessions.csv row count dropped from {old_count} to {new_count} "
+              f"(more than 50% decrease) -- possible transient read failure rather than a real "
+              f"usage drop; overwriting anyway", file=sys.stderr)
+
+
 def main() -> None:
     args = parse_args()
 
@@ -80,6 +98,10 @@ def main() -> None:
         tool_sessions = [s for s in sessions if s["source"] == tool]
         tool_daily = [d for d in daily if d["source"] == tool]
         tool_dir = DATA_DIR / tool
+        # Only sanity-check on a full, unfiltered run -- an intentional
+        # --from/--to/--repo scope is expected to shrink the row count.
+        if args.date_from is None and args.date_to is None and args.repo is None:
+            _warn_if_suspicious_drop(tool, len(tool_sessions), tool_dir / "sessions.csv")
         csv_common.atomic_write_csv(tool_dir / "sessions.csv", csv_common.SESSION_FIELDS, tool_sessions)
         csv_common.atomic_write_csv(tool_dir / "daily_activity.csv", csv_common.DAILY_FIELDS, tool_daily)
         print(f"{tool}/sessions.csv: {len(tool_sessions)} rows")

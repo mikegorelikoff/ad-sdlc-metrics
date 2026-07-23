@@ -84,3 +84,36 @@ def test_pipeline_repo_filter_skips_gap_fill(codex_home, claude_home, tmp_path, 
     run_pipeline(monkeypatch, tmp_path, data_dir, args=["--repo", "nonexistent"])
     captured = capsys.readouterr()
     assert "skipping stats-cache.json gap-fill" in captured.err
+
+
+def test_pipeline_warns_on_suspicious_row_count_drop(codex_home, claude_home, tmp_path, monkeypatch, capsys):
+    for i in range(10):
+        insert_thread(codex_home / "state_5.sqlite", id=f"t{i}", created_at=1751328000 + i)
+    data_dir = tmp_path / "data"
+    run_pipeline(monkeypatch, tmp_path, data_dir)
+    capsys.readouterr()
+
+    # Simulate a transient failure: sqlite file temporarily unreadable, so this
+    # run would only see 1 of the 10 previously-seen sessions.
+    import sqlite3
+    con = sqlite3.connect(codex_home / "state_5.sqlite")
+    con.execute("DELETE FROM threads WHERE id != 't0'")
+    con.commit()
+    con.close()
+
+    run_pipeline(monkeypatch, tmp_path, data_dir)
+    captured = capsys.readouterr()
+    assert "row count dropped from 10 to 1" in captured.err
+
+
+def test_pipeline_no_warning_when_scoped_by_flags(codex_home, claude_home, tmp_path, monkeypatch, capsys):
+    for i in range(10):
+        insert_thread(codex_home / "state_5.sqlite", id=f"t{i}", created_at=1751328000 + i)
+    data_dir = tmp_path / "data"
+    run_pipeline(monkeypatch, tmp_path, data_dir)
+    capsys.readouterr()
+
+    # An intentional --repo scope naturally shrinks the count -- not suspicious.
+    run_pipeline(monkeypatch, tmp_path, data_dir, args=["--repo", "nonexistent-project"])
+    captured = capsys.readouterr()
+    assert "row count dropped" not in captured.err

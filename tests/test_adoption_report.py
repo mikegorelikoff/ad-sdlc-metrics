@@ -40,6 +40,25 @@ def test_rollup_computes_active_day_rate_and_share():
     assert by_source["claude"]["session_share_pct"] == 20.0
 
 
+def test_rollup_marks_still_in_progress_period_as_partial():
+    rows = [{"source": "codex", "date": date(2026, 6, 29), "session_count": 1,
+             "message_count": None, "tool_call_count": None, "tokens_used": None}]
+    # "today" is mid-week -- the week (Mon 2026-06-29 .. Sun 2026-07-05) hasn't
+    # finished yet.
+    weekly = adoption_report._rollup(rows, adoption_report._week_start, adoption_report._days_in_week,
+                                      today=date(2026, 7, 1))
+    assert weekly[0]["is_partial"] == 1
+
+
+def test_rollup_marks_finished_period_as_not_partial():
+    rows = [{"source": "codex", "date": date(2026, 6, 29), "session_count": 1,
+             "message_count": None, "tool_call_count": None, "tokens_used": None}]
+    # "today" is well after the week ended.
+    weekly = adoption_report._rollup(rows, adoption_report._week_start, adoption_report._days_in_week,
+                                      today=date(2026, 8, 1))
+    assert weekly[0]["is_partial"] == 0
+
+
 def test_rollup_clamps_active_days_to_days_in_period():
     # Duplicate-looking rows shouldn't push active_days above 7 in a weekly rollup
     rows = [{"source": "codex", "date": date(2026, 6, 29 - i), "session_count": 1,
@@ -85,3 +104,19 @@ def test_main_writes_per_tool_rollups(tmp_path, monkeypatch):
     assert (codex_dir / "adoption_weekly.csv").exists()
     assert (codex_dir / "adoption_monthly.csv").exists()
     assert not (tmp_path / "claude").exists()
+
+
+def test_main_warns_when_all_daily_activity_files_are_empty(tmp_path, monkeypatch, capsys):
+    codex_dir = tmp_path / "codex"
+    codex_dir.mkdir()
+    (codex_dir / "sessions.csv").write_text("source,session_id\n")
+    (codex_dir / "daily_activity.csv").write_text(
+        "source,date,active,session_count,message_count,tool_call_count,tokens_used\n"
+    )
+    monkeypatch.setattr(adoption_report, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(sys, "argv", ["adoption_report.py"])
+
+    adoption_report.main()
+
+    captured = capsys.readouterr()
+    assert "no rows found" in captured.err

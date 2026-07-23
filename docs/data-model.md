@@ -35,12 +35,14 @@ One row per session (human-initiated *and* subagent-spawned — nothing is dropp
 | `session_kind` | `human` or `subagent` — see below |
 | `parent_session_id` | For `subagent` rows, the session that spawned them |
 
-!!! warning "`message_count` isn't perfectly comparable across tools"
-    Codex counts `response_item` messages from the tool's own rollout format. Claude
-    counts every `user`/`assistant` transcript record, which includes tool-result echoes
-    Claude Code synthesizes internally. Both are real, both are useful for a single
-    tool's own trend over time — just don't treat the two numbers as strictly
-    apples-to-apples yet. Tracked in Limitations & open questions.
+!!! note "How `message_count` stays comparable across tools"
+    Codex counts `response_item` messages from the tool's own rollout format, which
+    already keeps tool output as a separate `function_call_output` type, never a
+    message. Claude counts every `user`/`assistant` transcript record *except*
+    synthetic `user` turns whose content is only a `tool_result` block — Claude Code's
+    way of echoing a tool's own output back, not something a human typed. Excluding
+    those keeps the two tools' counts on the same footing: human/assistant
+    conversational turns only.
 
 ### `session_kind`: human vs subagent
 
@@ -76,8 +78,10 @@ direct access to the source directories at this stage.
 | Column | Notes |
 |---|---|
 | `active_days` / `days_in_period` / `active_day_rate` | The core adoption signal — `active_days / days_in_period`, DX framework's utilization dimension applied to a single user |
+| `is_partial` | `1` if this period hasn't finished as of the day the report ran (e.g. the current week) — its `active_day_rate` is a "so far" number, not final |
 | `session_share_pct` | This tool's share of combined Codex+Claude session volume that period |
 
 `days_in_period` uses a fixed length (7 for weekly, calendar days for monthly) rather
 than clipping to the dataset's actual start/end — so the very first and last periods in
-the output can understate `active_day_rate`. See Limitations & open questions.
+the output can understate `active_day_rate` even when `is_partial` is `0`. See
+Limitations & open questions.

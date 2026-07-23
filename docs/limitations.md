@@ -7,37 +7,39 @@ tool-vs-tool comparisons within the same tool are solid. These are the places wh
 
 ## Metric precision
 
-- **`message_count` isn't strictly comparable across tools.** Codex counts rollout
-  `response_item` messages; Claude counts every `user`/`assistant` transcript record,
-  which includes tool-result echoes Claude Code synthesizes internally. Both are
-  internally consistent for tracking one tool's own trend — just not a fair head-to-head
-  count yet.
-- **The current (in-progress) week/month row looks artificially low-adoption.**
-  `active_day_rate` is computed against a full period length (7 days / calendar days in
-  month) even when the period isn't over yet. A week that's 3 days in with 3 active days
-  shows `3/7 = 0.43`, not `3/3 = 1.0`. Deliberately left this way rather than guessing at
-  a "partial period" convention — read the most recent row with that in mind.
+- **The current (in-progress) week/month row is marked, not hidden.** `active_day_rate`
+  is still computed against a full period length (7 days / calendar days in month) even
+  when the period isn't over yet — a week that's 3 days in with 3 active days shows
+  `3/7 = 0.43`, not `3/3 = 1.0`. The `is_partial` column flags exactly this: `1` means
+  the period hasn't finished as of the day the report was run, so its `active_day_rate`
+  should be read as "so far," not final.
+- **`message_count` now excludes tool-result echoes on both tools**, so it's a fairer
+  cross-tool comparison than earlier versions of this pipeline. Codex counts rollout
+  `response_item` messages (its format keeps tool output as a separate
+  `function_call_output` type, never a message). Claude counts every `user`/`assistant`
+  transcript record *except* synthetic `user` turns whose content is only a
+  `tool_result` block — those are Claude Code echoing a tool's own output back, not
+  something a human typed.
 
 ## Data completeness
 
 - **Codex `message_count`/`tool_call_count` come from parsing each thread's own rollout
   file** — accurate, but adds a per-session file read. If a rollout file has been moved
   or deleted, those two fields fall back to blank for that session rather than guessing.
-- **Nested subagent-of-subagent transcripts aren't handled** — `parent_session_id`
-  currently always resolves to the top-level human session, which would be wrong (not
-  just missing) if a subagent ever spawns its own nested subagent. Not observed in
-  practice yet; only one level of nesting has ever shown up in the data.
 
 ## Robustness
 
-- **No automated test suite yet.** Coverage today is manual verification against real
-  local data (documented in each spec's Verification section) — solid for catching
-  regressions during development, but nothing runs automatically. Consolidating into one
-  `pytest` suite is tracked as open work.
-- **No row-count sanity check.** If `pipeline.py` returns suspiciously fewer sessions
-  than a previous run (transient sqlite lock, moved directory), it overwrites the
-  existing CSVs with the smaller result and no warning. Needs a human-chosen threshold
-  for "suspicious," not an arbitrary guess.
+- **The row-count sanity check is a warning, not a hard stop.** On a full, unfiltered
+  `pipeline.py` run, if a tool's `sessions.csv` row count drops more than 50% from the
+  previous run, a warning prints to stderr before the (smaller) result overwrites the
+  old CSVs — on the assumption that a human should decide whether to investigate a
+  transient read failure, rather than the script silently keeping stale data forever.
+  The 50% threshold is a judgment call, not derived from anything; it hasn't needed
+  tuning yet.
+- **`adoption_report.py` warns rather than errors on all-empty input.** If every
+  `data/<tool>/daily_activity.csv` parses to zero rows, it's ambiguous whether that
+  means "legitimately no data yet" or "something upstream broke" — a warning is
+  printed and empty rollup files are still written either way.
 
 ## Privacy
 
