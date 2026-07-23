@@ -24,11 +24,6 @@
   status: open
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-finish-deferred-work.md`
-  summary: Add a consolidated pytest suite covering inventory.py, the CSV pipeline (csv_common/extract_codex/extract_claude/pipeline), and adoption_report.py — replaces the earlier 3 separate per-spec test-suite entries.
-  evidence: Raised repeatedly by review agents across every spec so far; real gap, but no test framework exists in this repo yet and would be a substantial standalone undertaking.
-  status: open
-
-- source_spec: `_bmad-output/implementation-artifacts/spec-finish-deferred-work.md`
   summary: Handle nested subagent-of-subagent transcripts correctly in extract_claude.py — parent_session_id currently always resolves to the top-level human session's uuid (grandparent dir name), which would be wrong (not just missing) if a subagent ever spawns its own nested subagent.
   evidence: Blind Hunter flagged this; not observed in current data (only one level of subagent nesting seen), so left as a documented limitation rather than speculatively handling an unconfirmed shape.
   status: open

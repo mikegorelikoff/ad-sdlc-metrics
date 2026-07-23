@@ -31,8 +31,10 @@ project better," not "does this add a feature I want."
 1. Open an issue first for anything beyond a small fix, so the approach can be discussed
    before code is written.
 2. Keep changes focused — one logical change per pull request.
-3. Test against your own real `~/.codex`/`~/.claude` data where possible; there's no
-   fixture/mock data in this repo yet (tracked as a known gap in `deferred-work.md`).
+3. Run the test suite (`pip install pytest && python3 -m pytest`) — it uses fixture
+   `~/.codex`/`~/.claude` directories under `tmp_path`, so it never touches your real
+   data. Add tests for new behavior; `tests/conftest.py` has the fixtures for building
+   fake Codex threads and Claude transcripts.
 4. Update `README.md`/`docs/` if the change affects what a user sees or runs.
 
 ## Reporting bugs or gaps

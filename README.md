@@ -93,6 +93,16 @@ Design history — every decision this pipeline made and why, including what rev
 caught and fixed along the way — lives in `_bmad-output/implementation-artifacts/`.
 Known gaps and open questions are tracked in `deferred-work.md` in that same directory.
 
+## Tests
+
+```bash
+pip install pytest
+python3 -m pytest
+```
+
+Tests run against fixture `~/.codex`/`~/.claude` directories built under pytest's
+`tmp_path`, never your real data.
+
 ## Community
 
 - Contributing: `CONTRIBUTING.md`
