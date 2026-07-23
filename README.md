@@ -1,8 +1,8 @@
 # metrics
 
-Personal AI-tool adoption metrics for [Codex CLI](https://github.com/openai/codex) and
-[Claude Code](https://claude.com/claude-code), built entirely from data already on your
-machine (`~/.codex`, `~/.claude`) — read-only, nothing is uploaded anywhere.
+Personal AI-tool adoption metrics for Codex CLI and Claude Code, built entirely from
+data already on your machine (`~/.codex`, `~/.claude`) — read-only, nothing is uploaded
+anywhere.
 
 > Replace `OWNER/REPO` in the commands below with wherever this repo actually lives once pushed.
 
@@ -62,3 +62,13 @@ Requires Python 3.11+ (stdlib only, no dependencies to install) and bash.
   default, so adoption numbers reflect direct human usage.
 - Design history and known limitations: `_bmad-output/implementation-artifacts/`
   (specs) and `deferred-work.md` in the same directory.
+
+## Docs
+
+`docs/` has the full write-up: why this exists, the methodology it's scoped against,
+the data model, and known limitations. View it with:
+
+```bash
+pip install mkdocs-material
+mkdocs serve
+```
