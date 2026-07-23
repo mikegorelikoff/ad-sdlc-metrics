@@ -4,12 +4,10 @@ Personal AI-tool adoption metrics for Codex CLI and Claude Code, built entirely 
 data already on your machine (`~/.codex`, `~/.claude`) — read-only, nothing is uploaded
 anywhere.
 
-> Replace `OWNER/REPO` in the commands below with wherever this repo actually lives once pushed.
-
 ## Run it — no clone, no install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OWNER/REPO/main/scripts/remote-run.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mikegorelikoff/ad-sdlc-metrics/main/scripts/remote-run.sh | bash
 ```
 
 That's it. It downloads the scripts into a temp dir, runs the full pipeline, prints
@@ -17,14 +15,14 @@ where the CSVs landed, and tells you how to delete the temp dir when you're done
 Pass flags after `--`, e.g. only Codex, last 30 days:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OWNER/REPO/main/scripts/remote-run.sh | bash -s -- --tool codex --from 2026-07-01
+curl -fsSL https://raw.githubusercontent.com/mikegorelikoff/ad-sdlc-metrics/main/scripts/remote-run.sh | bash -s -- --tool codex --from 2026-07-01
 ```
 
 ## Run it from a local clone
 
 ```bash
-git clone https://github.com/OWNER/REPO.git
-cd REPO
+git clone https://github.com/mikegorelikoff/ad-sdlc-metrics.git
+cd ad-sdlc-metrics
 ./scripts/run.sh
 ```
 
