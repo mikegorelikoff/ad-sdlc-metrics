@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-smoke-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Syntax-check all scripts
+        run: python3 -m py_compile scripts/*.py
+
+      - name: Shellcheck run.sh / remote-run.sh
+        run: shellcheck scripts/run.sh scripts/remote-run.sh
+
+      # No ~/.codex or ~/.claude exist on the runner -- this exercises the
+      # "neither tool installed" path all three scripts are meant to handle
+      # without crashing, per docs/methodology.md's no-invented-data stance.
+      - name: Smoke test - inventory.py handles missing sources
+        run: python3 scripts/inventory.py
+
+      - name: Smoke test - pipeline.py handles empty sources
+        run: python3 scripts/pipeline.py
+
+      - name: Smoke test - adoption_report.py handles empty input
+        run: python3 scripts/adoption_report.py
+
+      - name: Smoke test - run.sh end to end
+        run: ./scripts/run.sh
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install mkdocs-material
+        run: pip install mkdocs-material
+
+      - name: Build docs (strict)
+        run: mkdocs build --strict
